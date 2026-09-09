@@ -129,6 +129,12 @@
                 }
               ]
             },
+            "cameraPacketCopy": {
+              "title": "Direct H.264 Packet Copy for Live View",
+              "description": "Send the printer's native H.264 video to HomeKit without decoding or re-encoding. Disable only if a HomeKit client rejects the native stream; snapshots and HKSV recording still use the compatible encoder pipeline.",
+              "type": "boolean",
+              "default": true
+            },
             "cameraRelayBitrateKbps": {
               "title": "Camera Relay Bitrate (kbps)",
               "description": "Quality of the internal camera relay used for HomeKit, motion detection, and HKSV. Higher values preserve more printer-camera detail but consume more LAN bandwidth and CPU.",

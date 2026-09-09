@@ -19,6 +19,7 @@ import type {
 } from 'homebridge';
 
 import type { AccessoryDeviceContext, BambuPlatform } from './platform.js';
+import { buildPacketCopyInputArgs, buildPacketCopyVideoArgs, isPacketCopyCompatible } from './liveStream.js';
 
 const MOTION_FRAME_BYTES = 64 * 36;
 const SNAPSHOT_INTERVAL_FPS = 0.2;
@@ -327,15 +328,18 @@ export class BambuCameraAccessory implements CameraStreamingDelegate, CameraReco
 
       const pipelineRunning = this.unifiedProcess != null;
       const streamUrl = this.platform.getCameraStreamUrl(this.context.printerId);
+      const packetCopy = this.platform.shouldPacketCopyLiveStream(this.context.printerId);
 
-      if (!pipelineRunning && !streamUrl) {
+      if (!streamUrl) {
         callback(new Error('Camera stream URL is not configured.'));
         return;
       }
 
-      const sourceInputArgs = pipelineRunning
-        ? ['-i', `udp://127.0.0.1:${this.relayPort}?overrun_nonfatal=1&fifo_size=5000000`]
-        : ['-rtsp_transport', 'tcp', '-i', streamUrl!];
+      const sourceInputArgs = packetCopy
+        ? buildPacketCopyInputArgs(streamUrl)
+        : pipelineRunning
+          ? ['-i', `udp://127.0.0.1:${this.relayPort}?overrun_nonfatal=1&fifo_size=5000000`]
+          : ['-rtsp_transport', 'tcp', '-i', streamUrl];
 
       const ffmpegPath = this.platform.getFfmpegPath(this.context.printerId);
       const videoInfo = request.video;
@@ -354,6 +358,11 @@ export class BambuCameraAccessory implements CameraStreamingDelegate, CameraReco
         return;
       }
 
+      if (packetCopy && !isPacketCopyCompatible(videoInfo)) {
+        callback(new Error('HomeKit requested an invalid H.264 packet-copy stream.'));
+        return;
+      }
+
       const srtpSuite = this.toSrtpSuiteString(sessionInfo.videoCryptoSuite);
       if (!srtpSuite) {
         callback(new Error(`Unsupported SRTP crypto suite: ${sessionInfo.videoCryptoSuite}`));
@@ -365,6 +374,22 @@ export class BambuCameraAccessory implements CameraStreamingDelegate, CameraReco
       const codecSpecificArgs = videoCodec === 'libx264'
         ? ['-preset', 'ultrafast', '-tune', 'zerolatency', '-x264-params', 'aud=1:repeat-headers=1', '-sc_threshold', '0']
         : ['-realtime', '1'];
+      const videoOutputArgs = packetCopy
+        ? buildPacketCopyVideoArgs()
+        : [
+          '-codec:v', videoCodec,
+          ...codecSpecificArgs,
+          '-profile:v', h264Profile,
+          '-level:v', h264Level,
+          '-pix_fmt', 'yuv420p',
+          '-r', `${outputFps}`,
+          '-vf', `scale=${outputWidth}:${outputHeight}`,
+          '-b:v', `${maxBitrate}k`,
+          '-bufsize', `${maxBitrate * 2}k`,
+          '-maxrate', `${maxBitrate}k`,
+          '-g', `${gop}`,
+          '-keyint_min', `${Math.max(10, Math.floor(gop / 2))}`,
+        ];
 
       const args = [
         '-hide_banner',
@@ -373,18 +398,7 @@ export class BambuCameraAccessory implements CameraStreamingDelegate, CameraReco
         '-an',
         '-sn',
         '-map', '0:v:0',
-        '-codec:v', videoCodec,
-        ...codecSpecificArgs,
-        '-profile:v', h264Profile,
-        '-level:v', h264Level,
-        '-pix_fmt', 'yuv420p',
-        '-r', `${outputFps}`,
-        '-vf', `scale=${outputWidth}:${outputHeight}`,
-        '-b:v', `${maxBitrate}k`,
-        '-bufsize', `${maxBitrate * 2}k`,
-        '-maxrate', `${maxBitrate}k`,
-        '-g', `${gop}`,
-        '-keyint_min', `${Math.max(10, Math.floor(gop / 2))}`,
+        ...videoOutputArgs,
         '-muxdelay', '0',
         '-muxpreload', '0',
         '-payload_type', `${videoInfo.pt}`,

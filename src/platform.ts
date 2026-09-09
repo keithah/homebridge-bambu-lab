@@ -34,6 +34,7 @@ export interface BambuPrinterConfig {
   cameraName?: string;
   ffmpegPath?: string;
   cameraVideoCodec?: 'libx264' | 'h264_videotoolbox';
+  cameraPacketCopy?: boolean;
   cameraRelayBitrateKbps?: number;
   cameraRelayFps?: number;
   enableHksv?: boolean;
@@ -186,6 +187,10 @@ export class BambuPlatform implements DynamicPlatformPlugin {
 
   getCameraRelayProfile(printerId: string): RelayProfile {
     return resolveRelayProfile(this.printers.get(printerId)?.config);
+  }
+
+  shouldPacketCopyLiveStream(printerId: string): boolean {
+    return this.printers.get(printerId)?.config.cameraPacketCopy !== false;
   }
 
   isHksvEnabled(printerId: string): boolean {
@@ -704,6 +709,7 @@ export class BambuPlatform implements DynamicPlatformPlugin {
         cameraName: this.configTyped.cameraName,
         ffmpegPath: this.configTyped.ffmpegPath,
         cameraVideoCodec: this.configTyped.cameraVideoCodec,
+        cameraPacketCopy: this.configTyped.cameraPacketCopy,
         cameraRelayBitrateKbps: this.configTyped.cameraRelayBitrateKbps,
         cameraRelayFps: this.configTyped.cameraRelayFps,
         enableHksv: this.configTyped.enableHksv,
