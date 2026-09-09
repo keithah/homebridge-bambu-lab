@@ -15,6 +15,7 @@ import mqtt from 'mqtt';
 import type { IClientOptions, MqttClient } from 'mqtt';
 
 import { BambuCameraAccessory } from './cameraAccessory.js';
+import { resolveRelayProfile, type RelayProfile } from './cameraQuality.js';
 import { BambuPrinterAccessory, type AccessoryKind } from './platformAccessory.js';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings.js';
 
@@ -33,6 +34,8 @@ export interface BambuPrinterConfig {
   cameraName?: string;
   ffmpegPath?: string;
   cameraVideoCodec?: 'libx264' | 'h264_videotoolbox';
+  cameraRelayBitrateKbps?: number;
+  cameraRelayFps?: number;
   enableHksv?: boolean;
   enableLocalMotionDetection?: boolean;
   motionSensitivity?: number;
@@ -179,6 +182,10 @@ export class BambuPlatform implements DynamicPlatformPlugin {
     }
 
     return process.platform === 'darwin' ? 'h264_videotoolbox' : 'libx264';
+  }
+
+  getCameraRelayProfile(printerId: string): RelayProfile {
+    return resolveRelayProfile(this.printers.get(printerId)?.config);
   }
 
   isHksvEnabled(printerId: string): boolean {
@@ -697,6 +704,8 @@ export class BambuPlatform implements DynamicPlatformPlugin {
         cameraName: this.configTyped.cameraName,
         ffmpegPath: this.configTyped.ffmpegPath,
         cameraVideoCodec: this.configTyped.cameraVideoCodec,
+        cameraRelayBitrateKbps: this.configTyped.cameraRelayBitrateKbps,
+        cameraRelayFps: this.configTyped.cameraRelayFps,
         enableHksv: this.configTyped.enableHksv,
         enableLocalMotionDetection: this.configTyped.enableLocalMotionDetection,
         motionSensitivity: this.configTyped.motionSensitivity,

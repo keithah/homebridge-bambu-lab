@@ -28,6 +28,7 @@
   },
   "scripts": {
     "build": "rimraf ./dist && tsc",
+    "test": "npm run build && node --test test/**/*.test.mjs",
     "lint": "eslint . --max-warnings=0",
     "prepublishOnly": "npm run lint && npm run build",
     "dev": "npm run build && npm run lint && sudo hb-service restart",

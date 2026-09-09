@@ -21,9 +21,6 @@ import type {
 import type { AccessoryDeviceContext, BambuPlatform } from './platform.js';
 
 const MOTION_FRAME_BYTES = 64 * 36;
-const RELAY_FPS = 15;
-const RELAY_BITRATE_KBPS = 1500;
-const RELAY_GOP = RELAY_FPS;
 const SNAPSHOT_INTERVAL_FPS = 0.2;
 const SNAPSHOT_MAX_AGE_MS = 60_000;
 const SNAPSHOT_STALE_WARN_MS = 30_000;
@@ -612,6 +609,7 @@ export class BambuCameraAccessory implements CameraStreamingDelegate, CameraReco
     }
 
     const codec = this.platform.getCameraVideoCodec(this.context.printerId);
+    const relayProfile = this.platform.getCameraRelayProfile(this.context.printerId);
     const ffmpegPath = this.platform.getFfmpegPath(this.context.printerId);
     const relayCodecArgs = codec === 'libx264'
       ? ['-preset', 'ultrafast', '-tune', 'zerolatency', '-x264-params', 'aud=1:repeat-headers=1']
@@ -661,9 +659,9 @@ export class BambuCameraAccessory implements CameraStreamingDelegate, CameraReco
         '-codec:v', codec, ...relayCodecArgs,
         '-profile:v', 'baseline', '-level:v', '4.0',
         '-pix_fmt', 'yuv420p',
-        '-r', `${RELAY_FPS}`,
-        '-b:v', `${RELAY_BITRATE_KBPS}k`,
-        '-g', `${RELAY_GOP}`, '-keyint_min', `${RELAY_GOP}`,
+        '-r', `${relayProfile.fps}`,
+        '-b:v', `${relayProfile.bitrateKbps}k`,
+        '-g', `${relayProfile.gop}`, '-keyint_min', `${relayProfile.gop}`,
         '-f', 'mpegts', `udp://127.0.0.1:${this.relayPort}`,
         '-map', '[vs]',
         '-vcodec', 'mjpeg',
@@ -707,9 +705,9 @@ export class BambuCameraAccessory implements CameraStreamingDelegate, CameraReco
         '-codec:v', codec, ...relayCodecArgs,
         '-profile:v', 'baseline', '-level:v', '4.0',
         '-pix_fmt', 'yuv420p',
-        '-r', `${RELAY_FPS}`,
-        '-b:v', `${RELAY_BITRATE_KBPS}k`,
-        '-g', `${RELAY_GOP}`, '-keyint_min', `${RELAY_GOP}`,
+        '-r', `${relayProfile.fps}`,
+        '-b:v', `${relayProfile.bitrateKbps}k`,
+        '-g', `${relayProfile.gop}`, '-keyint_min', `${relayProfile.gop}`,
         '-f', 'mpegts', `udp://127.0.0.1:${this.relayPort}`,
         '-map', '[vs]',
         '-vcodec', 'mjpeg',
@@ -731,9 +729,9 @@ export class BambuCameraAccessory implements CameraStreamingDelegate, CameraReco
         '-codec:v', codec, ...relayCodecArgs,
         '-profile:v', 'baseline', '-level:v', '4.0',
         '-pix_fmt', 'yuv420p',
-        '-r', `${RELAY_FPS}`,
-        '-b:v', `${RELAY_BITRATE_KBPS}k`,
-        '-g', `${RELAY_GOP}`, '-keyint_min', `${RELAY_GOP}`,
+        '-r', `${relayProfile.fps}`,
+        '-b:v', `${relayProfile.bitrateKbps}k`,
+        '-g', `${relayProfile.gop}`, '-keyint_min', `${relayProfile.gop}`,
         '-f', 'mpegts', `udp://127.0.0.1:${this.relayPort}`,
         '-map', '[vs]',
         '-vcodec', 'mjpeg',

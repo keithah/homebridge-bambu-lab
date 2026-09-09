@@ -129,6 +129,22 @@
                 }
               ]
             },
+            "cameraRelayBitrateKbps": {
+              "title": "Camera Relay Bitrate (kbps)",
+              "description": "Quality of the internal camera relay used for HomeKit, motion detection, and HKSV. Higher values preserve more printer-camera detail but consume more LAN bandwidth and CPU.",
+              "type": "integer",
+              "default": 6000,
+              "minimum": 1000,
+              "maximum": 12000
+            },
+            "cameraRelayFps": {
+              "title": "Camera Relay Frame Rate",
+              "description": "Frame rate of the internal HomeKit camera relay.",
+              "type": "integer",
+              "default": 24,
+              "minimum": 10,
+              "maximum": 30
+            },
             "enableHksv": {
               "title": "Enable HomeKit Secure Video",
               "description": "Enables HKSV recording management services for iCloud event recording.",
