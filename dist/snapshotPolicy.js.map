@@ -1,0 +1,1 @@
+{"version":3,"file":"snapshotPolicy.js","sourceRoot":"","sources":["../src/snapshotPolicy.ts"],"names":[],"mappings":"AAMA,MAAM,UAAU,yBAAyB,CAAC,KAAyB,EAAE,QAAQ,GAAG,MAAM;IACpF,IAAI,CAAC,KAAK,CAAC,iBAAiB,EAAE,CAAC;QAC7B,OAAO,KAAK,CAAC;IACf,CAAC;IAED,OAAO,KAAK,CAAC,oBAAoB,IAAI,KAAK,CAAC,UAAU,GAAG,QAAQ,CAAC;AACnE,CAAC"}

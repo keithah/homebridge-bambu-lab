@@ -2,6 +2,7 @@ import { createSocket } from 'node:dgram';
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { buildPacketCopyInputArgs, buildPacketCopyVideoArgs, isPacketCopyCompatible } from './liveStream.js';
+import { shouldReuseCachedSnapshot } from './snapshotPolicy.js';
 const MOTION_FRAME_BYTES = 64 * 36;
 const SNAPSHOT_INTERVAL_FPS = 0.2;
 const SNAPSHOT_MAX_AGE_MS = 60_000;
@@ -140,9 +141,16 @@ export class BambuCameraAccessory {
         if (existsSync(this.snapshotTmpPath)) {
             try {
                 const ageMs = Date.now() - statSync(this.snapshotTmpPath).mtimeMs;
-                if (ageMs < SNAPSHOT_MAX_AGE_MS) {
+                if (shouldReuseCachedSnapshot({
+                    hasCachedSnapshot: true,
+                    cacheAgeMs: ageMs,
+                    hasActiveLiveSession: this.ongoingSessions.size > 0,
+                }, SNAPSHOT_MAX_AGE_MS)) {
                     if (ageMs >= SNAPSHOT_STALE_WARN_MS) {
-                        this.platform.log.warn(`Snapshot cache is stale (${Math.round(ageMs / 1000)}s old); returning it anyway.`);
+                        const reason = this.ongoingSessions.size > 0
+                            ? 'while a direct live session owns the camera'
+                            : 'returning it anyway';
+                        this.platform.log.warn(`Snapshot cache is stale (${Math.round(ageMs / 1000)}s old); ${reason}.`);
                     }
                     const data = readFileSync(this.snapshotTmpPath);
                     this.platform.log.info(`Snapshot from cache (${data.length} bytes, ${Math.round(ageMs / 1000)}s old)`);
